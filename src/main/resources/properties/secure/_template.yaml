@@ -57,3 +57,11 @@ sfdc:
   password : ""
   securityToken : ""
   # authUrl : ""
+external:
+  okta:
+    api:
+      token: "${OKTA_API_TOKEN}"
+  plaid:
+    client:
+      id: "${PLAID_CLIENT_ID}"
+      secret: "${PLAID_SECRET}"

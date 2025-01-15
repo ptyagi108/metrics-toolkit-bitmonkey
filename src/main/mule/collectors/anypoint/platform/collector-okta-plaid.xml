@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <flow name="collector-okta-plaid-metrics-flow">
+        <!-- Initialize variables -->
+        <set-variable variableName="userApplications" value="#[[]]"/>
+        
+        <!-- Get Okta Users -->
+        <flow-ref name="api-call-okta-users-flow"/>
+        <set-variable variableName="oktaUsers" value="#[payload.users]"/>
+        
+        <!-- Process each user -->
+        <foreach collection="#[vars.oktaUsers]">
+            <try>
+                <set-variable variableName="userId" value="#[payload.id]"/>
+                <set-variable variableName="currentUser" value="#[payload]"/>
+                
+                <!-- Get Plaid access token -->
+                <flow-ref name="api-call-plaid-token-flow"/>
+                <set-variable variableName="accessToken" value="#[payload.access_token]"/>
+                
+                <!-- Get user's applications -->
+                <flow-ref name="api-call-plaid-applications-flow"/>
+                
+                <!-- Aggregate user applications -->
+                <ee:transform>
+                    <ee:variables>
+                        <ee:set-variable variableName="userApplications" 
+                                       resource="dw/okta-plaid/aggregate-user-applications.dwl"/>
+                    </ee:variables>
+                </ee:transform>
+            </try>
+        </foreach>
+
+        <!-- Explode applications -->
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="explodedApplications" 
+                               resource="dw/okta-plaid/explode-applications.dwl"/>
+            </ee:variables>
+        </ee:transform>
+
+        <!-- Calculate metrics -->
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload resource="dw/okta-plaid/calculate-application-metrics.dwl"/>
+            </ee:message>
+        </ee:transform>
+
+        <!-- Log metrics for dashboard -->
+        <foreach collection="#[payload.applications]">
+            <logger level="INFO" 
+                    message='#["plaid.metrics|application=" ++ payload.application ++ 
+                            "|userCount=" ++ payload.userCount]'/>
+        </foreach>
+    </flow>
+
+</mule>

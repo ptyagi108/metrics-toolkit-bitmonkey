@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+	 <!-- Get Okta Users -->
+    <sub-flow name="api-call-okta-users-flow">
+        <logger level="DEBUG" message="Starting Okta Users API call"/>
+        
+        <http:request method="GET" config-ref="HTTP_Okta_Request_Config" 
+                     path="${external.okta.api.users.path}">
+            <http:headers>
+                <![CDATA[#[{
+                    'Authorization': 'SSWS ' ++ p('secure::external.okta.api.token'),
+                    'Accept': 'application/json'
+                }]]]>
+            </http:headers>
+            <http:query-params>
+                <![CDATA[#[{
+                    'limit': '200',
+                    'filter': p('okta.api.filter') default 'status eq "ACTIVE"'
+                }]]]>
+            </http:query-params>
+        </http:request>
+
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+                output application/json
+                ---
+                {
+                    users: payload map {
+                        id: $.id,
+                        status: $.status
+                    }
+                }]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </sub-flow>
+
+    <!-- Get Plaid Access Token -->
+    <sub-flow name="api-call-plaid-token-flow">
+        <logger level="DEBUG" message='#["Getting Plaid access token for user: " ++ vars.userId]'/>
+        
+        <http:request method="POST" config-ref="HTTP_Plaid_Request_Config"
+                     path="/item/import">
+            <http:headers>
+                <![CDATA[#[{
+                    'Content-Type': 'application/json',
+                    'PLAID-CLIENT-ID': p('secure::external.plaid.client.id'),
+                    'PLAID-SECRET': p('secure::external.plaid.secret')
+                }]]]>
+            </http:headers>
+            <http:body><![CDATA[#[{
+                client_id: p('secure::external.plaid.client.id'),
+                secret: p('secure::external.plaid.secret'),
+                user_auth: {
+                    user_id: vars.userId
+                }
+            }]]]></http:body>
+        </http:request>
+
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+                output application/json
+                ---
+                {
+                    user_id: vars.userId,
+                    access_token: payload.access_token
+                }]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </sub-flow>
+
+    <!-- Get Plaid Applications -->
+    <sub-flow name="api-call-plaid-applications-flow">
+        <logger level="DEBUG" message='#["Getting Plaid applications for user: " ++ vars.userId]'/>
+        
+        <http:request method="POST" config-ref="HTTP_Plaid_Request_Config"
+                     path="/item/application/list">
+            <http:headers>
+                <![CDATA[#[{
+                    'Content-Type': 'application/json',
+                    'PLAID-CLIENT-ID': p('secure::external.plaid.client.id'),
+                    'PLAID-SECRET': p('secure::external.plaid.secret')
+                }]]]>
+            </http:headers>
+            <http:body><![CDATA[#[{
+                client_id: p('secure::external.plaid.client.id'),
+                secret: p('secure::external.plaid.secret'),
+                access_token: vars.accessToken
+            }]]]></http:body>
+        </http:request>
+
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+                output application/json
+                ---
+                {
+                    user_id: vars.userId,
+                    applications: (payload.applications default []) map {
+                        display_name: $.display_name
+                    }
+                }]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </sub-flow>
+</mule>

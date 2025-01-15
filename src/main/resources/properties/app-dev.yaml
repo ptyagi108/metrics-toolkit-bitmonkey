@@ -130,3 +130,16 @@ sdlc:
     host: "dev.azure.com"
     apiPath: "/mycompany/mulesoft-projects/_apis" # Path should be set to /[organization name]/[project name]/_apis
     projectName: "mulesoft-projects"
+    
+external:
+  okta:
+    api:
+      host: "${OKTA_API_HOST}"
+      users:
+        path: "/api/v1/users"
+  plaid:
+    api:
+      host: "production.plaid.com"
+      endpoints:
+        token: "/item/import"
+        applications: "/item/application/list"
