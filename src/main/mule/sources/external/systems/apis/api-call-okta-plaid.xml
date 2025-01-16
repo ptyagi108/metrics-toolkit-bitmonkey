@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-
-	 <!-- Get Okta Users -->
+    <!-- Get Okta Users -->
     <sub-flow name="api-call-okta-users-flow">
         <logger level="DEBUG" message="Starting Okta Users API call"/>
         
@@ -28,15 +31,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 
         <ee:transform>
             <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-                output application/json
-                ---
-                {
-                    users: payload map {
-                        id: $.id,
-                        status: $.status
-                    }
-                }]]></ee:set-payload>
+                <ee:set-payload resource="dw/okta-plaid/transform-okta-users.dwl"/>
             </ee:message>
         </ee:transform>
     </sub-flow>
@@ -63,15 +58,10 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
             }]]]></http:body>
         </http:request>
 
+        <!-- Use transform-plaid-token.dwl here -->
         <ee:transform>
             <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-                output application/json
-                ---
-                {
-                    user_id: vars.userId,
-                    access_token: payload.access_token
-                }]]></ee:set-payload>
+                <ee:set-payload resource="dw/okta-plaid/transform-plaid-token.dwl"/>
             </ee:message>
         </ee:transform>
     </sub-flow>
@@ -96,18 +86,12 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
             }]]]></http:body>
         </http:request>
 
+        <!-- Use transform-plaid-applications.dwl here -->
         <ee:transform>
             <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-                output application/json
-                ---
-                {
-                    user_id: vars.userId,
-                    applications: (payload.applications default []) map {
-                        display_name: $.display_name
-                    }
-                }]]></ee:set-payload>
+                <ee:set-payload resource="dw/okta-plaid/transform-plaid-applications.dwl"/>
             </ee:message>
         </ee:transform>
     </sub-flow>
+
 </mule>
