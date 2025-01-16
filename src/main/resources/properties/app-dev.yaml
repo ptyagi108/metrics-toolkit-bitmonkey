@@ -131,15 +131,18 @@ sdlc:
     apiPath: "/mycompany/mulesoft-projects/_apis" # Path should be set to /[organization name]/[project name]/_apis
     projectName: "mulesoft-projects"
     
-external:
-  okta:
-    api:
-      host: "${OKTA_API_HOST}"
-      users:
-        path: "/api/v1/users"
-  plaid:
-    api:
-      host: "production.plaid.com"
-      endpoints:
-        token: "/item/import"
-        applications: "/item/application/list"
+# Add new configurations for Okta and Plaid
+okta:
+  enabled: "true" #Configure and set this to true if Okta-Plaid metrics are required
+  host: "${OKTA_API_HOST}" #Your Okta domain
+  port: "443"
+  path: "/api/v1/users"
+  filter: "status eq \"ACTIVE\""
+
+plaid:
+  enabled: "true" #Configure and set this to true if Okta-Plaid metrics are required
+  host: "${PLAID_ENV}.plaid.com" #Environment specific host
+  port: "443"
+  paths:
+    token: "/item/import"
+    applications: "/item/application/list"
