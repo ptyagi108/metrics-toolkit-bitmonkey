@@ -55,9 +55,19 @@
 
         <!-- Log metrics for dashboard -->
         <foreach collection="#[payload.applications]">
-            <logger level="INFO" 
-                    message='#["plaid.metrics|application=" ++ payload.application ++ 
-                            "|userCount=" ++ payload.userCount]'/>
+           <ee:transform>  
+                <ee:message>  
+                    <ee:set-payload><![CDATA[%dw 2.0  
+output application/json  
+---  
+{  
+    "metric_type": "api.dashboard",  
+    "application": payload.application,  
+    "user_count": payload.userCount  
+}]]></ee:set-payload>  
+                </ee:message>  
+            </ee:transform>  
+            <logger level="INFO" message="#[write(payload, 'application/json')]"/>  
         </foreach>
     </flow>
 
