@@ -60,8 +60,8 @@ sfdc:
 external:
   okta:
     api:
-      token: "${OKTA_API_TOKEN}"
+      token: "003x6s4wq-l7fqswhc7lgFwUrbkaAlDqdJO_DvVGed"
   plaid:
     client:
-      id: "${PLAID_CLIENT_ID}"
-      secret: "${PLAID_SECRET}"
+      id: "0oajr6flqkevmRvoS1d7"
+      secret: "TF31W_N0C0jGdKxZv5rJjua3xDMr_dNLA5sZvUwxEoDUZBU_7yFx4OXikzU-hd6"
