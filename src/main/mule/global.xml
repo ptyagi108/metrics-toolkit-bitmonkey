@@ -26,22 +26,26 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 		<http:request-connection host="${anypoint.platform.apis.osv2.host}" port="443" protocol="HTTPS" />
 	</http:request-config>
 	<!-- Okta HTTP Request Configuration -->
-    <http:request-config name="HTTP_Okta_Request_Config" doc:name="HTTP Okta Request configuration">
-        <http:request-connection protocol="HTTPS" host="${okta.host}" port="${okta.port}">
-            <http:authentication>
-                <http:basic-authentication username="${secure::okta.api.username}" password="${secure::okta.api.token}"/>
-            </http:authentication>
-        </http:request-connection>
-    </http:request-config>
+<http:request-config name="HTTP_Okta_Request_Config" doc:name="HTTP Okta Request configuration">
+    <http:request-connection protocol="HTTPS" host="${okta.host}" port="${okta.port}">
+        <!-- For Okta, we use API token in header, not basic auth -->
+        <http:default-headers>
+            <http:default-header key="Authorization" value="SSWS ${secure::okta.api.token}"/>
+        </http:default-headers>
+    </http:request-connection>
+</http:request-config>
 
-    <!-- Plaid HTTP Request Configuration -->
-    <http:request-config name="HTTP_Plaid_Request_Config" doc:name="HTTP Plaid Request configuration">
-        <http:request-connection protocol="HTTPS" host="${plaid.host}" port="${plaid.port}">
-            <http:authentication>
-                <http:basic-authentication username="${secure::plaid.client.id}" password="${secure::plaid.client.secret}"/>
-            </http:authentication>
-        </http:request-connection>
-    </http:request-config>
+  <!-- Plaid HTTP Request Configuration -->
+<http:request-config name="HTTP_Plaid_Request_Config" doc:name="HTTP Plaid Request configuration">
+    <http:request-connection protocol="HTTPS" host="${plaid.host}" port="${plaid.port}">
+        <!-- For Plaid, we use headers instead of basic auth -->
+        <http:default-headers>
+            <http:default-header key="PLAID-CLIENT-ID" value="${secure::plaid.client.id}"/>
+            <http:default-header key="PLAID-SECRET" value="${secure::plaid.client.secret}"/>
+            <http:default-header key="Content-Type" value="application/json"/>
+        </http:default-headers>
+    </http:request-connection>
+</http:request-config>
 	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="24678c25-10fb-4f47-941f-d16a779997c5" file="properties/secure/app-${mule.env}.yaml" key="${mule.key}"/>
 	<global-property doc:name="Global Property" doc:id="27925b96-0977-4ea5-b09e-e417f88b98d0" name="mule.key" value="thisshouldbeakey" />
 </mule>
