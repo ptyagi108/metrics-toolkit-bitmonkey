@@ -11,87 +11,36 @@
 
     <!-- Get Okta Users -->
     <sub-flow name="api-call-okta-users-flow">
-        <logger level="DEBUG" message="Starting Okta Users API call"/>
-        
-        <http:request method="GET" config-ref="HTTP_Okta_Request_Config" 
-                     path="${external.okta.api.users.path}">
-            <http:headers>
-                <![CDATA[#[{
-                    'Authorization': 'SSWS ' ++ p('secure::external.okta.api.token'),
-                    'Accept': 'application/json'
-                }]]]>
-            </http:headers>
-            <http:query-params>
-                <![CDATA[#[{
-                    'limit': '200',
-                    'filter': p('okta.api.filter') default 'status eq "ACTIVE"'
-                }]]]>
-            </http:query-params>
+        <http:request method="GET" config-ref="HTTP_Okta_Request_Config" path="/api/v1/users">
+            <http:query-params><![CDATA[#[{
+                'limit': '200',
+                'filter': p('okta.filter') default 'status eq "ACTIVE"'
+            }]]></http:query-params>
         </http:request>
-
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload resource="dw/okta-plaid/transform-okta-users.dwl"/>
-            </ee:message>
-        </ee:transform>
     </sub-flow>
 
-    <!-- Get Plaid Access Token -->
+    <!-- Get Plaid Token -->
     <sub-flow name="api-call-plaid-token-flow">
-        <logger level="DEBUG" message='#["Getting Plaid access token for user: " ++ vars.userId]'/>
-        
-        <http:request method="POST" config-ref="HTTP_Plaid_Request_Config"
-                     path="/item/import">
-            <http:headers>
-                <![CDATA[#[{
-                    'Content-Type': 'application/json',
-                    'PLAID-CLIENT-ID': p('secure::external.plaid.client.id'),
-                    'PLAID-SECRET': p('secure::external.plaid.secret')
-                }]]]>
-            </http:headers>
+        <http:request method="POST" config-ref="HTTP_Plaid_Request_Config" path="/item/import">
             <http:body><![CDATA[#[{
-                client_id: p('secure::external.plaid.client.id'),
-                secret: p('secure::external.plaid.secret'),
+                client_id: p('secure::plaid.client.id'),
+                secret: p('secure::plaid.client.secret'),
                 user_auth: {
                     user_id: vars.userId
                 }
-            }]]]></http:body>
+            }]]></http:body>
         </http:request>
-
-        <!-- Use transform-plaid-token.dwl here -->
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload resource="dw/okta-plaid/transform-plaid-token.dwl"/>
-            </ee:message>
-        </ee:transform>
     </sub-flow>
 
     <!-- Get Plaid Applications -->
     <sub-flow name="api-call-plaid-applications-flow">
-        <logger level="DEBUG" message='#["Getting Plaid applications for user: " ++ vars.userId]'/>
-        
-        <http:request method="POST" config-ref="HTTP_Plaid_Request_Config"
-                     path="/item/application/list">
-            <http:headers>
-                <![CDATA[#[{
-                    'Content-Type': 'application/json',
-                    'PLAID-CLIENT-ID': p('secure::external.plaid.client.id'),
-                    'PLAID-SECRET': p('secure::external.plaid.secret')
-                }]]]>
-            </http:headers>
+        <http:request method="POST" config-ref="HTTP_Plaid_Request_Config" path="/item/application/list">
             <http:body><![CDATA[#[{
-                client_id: p('secure::external.plaid.client.id'),
-                secret: p('secure::external.plaid.secret'),
+                client_id: p('secure::plaid.client.id'),
+                secret: p('secure::plaid.client.secret'),
                 access_token: vars.accessToken
-            }]]]></http:body>
+            }]]></http:body>
         </http:request>
-
-        <!-- Use transform-plaid-applications.dwl here -->
-        <ee:transform>
-            <ee:message>
-                <ee:set-payload resource="dw/okta-plaid/transform-plaid-applications.dwl"/>
-            </ee:message>
-        </ee:transform>
     </sub-flow>
 
 </mule>
